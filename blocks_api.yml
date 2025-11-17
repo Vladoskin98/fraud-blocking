@@ -1,0 +1,228 @@
+openapi: 3.0.0
+info:
+  title: Blocking payments
+  description: Блокировки платежей кейс ТБанк 
+  version: 0.0.1 alpha
+servers:
+  - url: localhost:4000
+
+paths:
+  /blocks:
+    post:
+      summary: Запрос на создание блокировки клиента
+      tags:
+        - Blocks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBlockRequest'
+      responses:
+        '200':
+          description: Блокировка успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '409':
+          description: Конфликт, клиент уже заблокирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /blocks/{clientId}:
+    patch:
+      summary: Запрос на модификацию параметров блокировки клиента
+      tags:
+        - Blocks
+      parameters:
+      - name: clientId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          example: 100500
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditBlockRequest'
+      responses:
+        '200':
+          description: Параметры блокировки успешно изменены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  /blocks/delete/{clientId}:
+    delete:
+      summary: Запрос на снятие (удаление) блокировки клиента
+      tags:
+        - Blocks
+      parameters:
+      - name: clientId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          example: 100500
+      responses:
+        '200':
+          description: Клиент успешно разблокирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteBlockResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /blocks/check/{clientId}:
+    get:
+      summary: Проверка наличия блокировки у клиента
+      tags:
+        - Blocks
+      parameters:
+      - name: clientId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          example: 100500
+      responses:
+        '200':
+          description: Клиент обнаружен в списке заблокированных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockResponse'
+        '400':
+          $ref: '#/components/responses/400BadRequest'
+        '404':
+          $ref: '#/components/responses/404NotFound'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                 
+components:
+  schemas:
+    CreateBlockRequest:
+      type: object
+      required:
+        - clientId
+        - fraud
+        - reason
+      properties:
+        clientId:
+          type: integer
+          description: Id клиента
+          example: 100500
+        fraud:
+          type: boolean
+          description: Является ли заблокированный клиент мошенником
+          example: false
+        reason:
+          type: string
+          description: причина блокировки
+          example: "Техническая проблема"
+    
+    EditBlockRequest:
+      type: object
+      properties:
+        fraud:
+          type: boolean
+          description: Является ли заблокированный клиент мошенником
+          example: true
+        reason:
+          type: string
+          description: причина блокировки
+          example: "Мошенничество подтвердилось"
+        
+          
+    BlockResponse:
+      type: object
+      properties:
+        clientId:
+          type: integer
+          description: Id клиента
+          example: 100500
+        fraud:
+          type: boolean
+          description: Является ли заблокированный клиент мошенником
+          example: false
+        reason:
+          type: string
+          description: причина блокировки
+          example: "Техническая проблема"
+        modifiedAt:
+          type: string
+          format: date-time
+          description: время изменения
+          example: "2025-10-26T10:15:00Z"
+    
+    DeleteBlockResponse:
+      type: object
+      required:
+        - clientId
+      properties:
+        clientId:
+          type: integer
+          description: Id клиента
+          example: 100500
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example:
+            value: "Текст ошибки"
+    
+  responses:
+    '400BadRequest':
+      description: Неверные входные данные
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '404NotFound':
+      description: Клиент не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
